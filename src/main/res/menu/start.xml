@@ -1,0 +1,17 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android" >
+
+    <item
+        android:id="@+id/action_achievement"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_achievement"
+        android:showAsAction="ifRoom|withText"
+        android:title="@string/achievements"/>
+
+    <item
+        android:id="@+id/action_reload"
+        android:orderInCategory="100"
+        android:icon="@drawable/ic_reload"
+        android:showAsAction="ifRoom|withText"
+        android:title="@string/reload"/>
+
+</menu>

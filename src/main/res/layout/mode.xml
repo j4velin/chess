@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<RadioGroup xmlns:android="http://schemas.android.com/apk/res/android"
+            android:layout_width="match_parent"
+            android:id="@+id/game_mode"
+            android:padding="10dp"
+            android:layout_height="match_parent">
+
+    <RadioButton
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:tag="1"
+        android:drawableRight="@drawable/ic_2player"
+        android:drawableEnd="@drawable/ic_2player"
+        android:drawablePadding="10dp"
+        android:layout_marginBottom="10dp"
+        android:text="2-player, standard chess board, 16 pieces each"/>
+
+    <RadioButton
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:tag="2"
+        android:drawableRight="@drawable/ic_2player"
+        android:drawableEnd="@drawable/ic_2player"
+        android:layout_marginBottom="10dp"
+        android:drawablePadding="10dp"
+        android:text="2-player, extended board, 32 pieces each"/>
+
+    <RadioButton
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginBottom="10dp"
+        android:tag="3"
+        android:drawableRight="@drawable/ic_4player"
+        android:drawableEnd="@drawable/ic_4player"
+        android:drawablePadding="10dp"
+        android:text="4-player in 2 teams"/>
+
+    <RadioButton
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:drawablePadding="10dp"
+        android:tag="4"
+        android:drawableRight="@drawable/ic_4player"
+        android:drawableEnd="@drawable/ic_4player"
+        android:text="4-player, no teams"/>
+
+</RadioGroup>

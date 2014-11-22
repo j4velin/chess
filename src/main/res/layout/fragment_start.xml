@@ -1,0 +1,90 @@
+<RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
+                xmlns:tools="http://schemas.android.com/tools"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:padding="10dp"
+                tools:context="de.j4velin.chess.StartFragment"
+                android:baselineAligned="false">
+
+    <TextView
+        android:id="@+id/start_game"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:visibility="invisible"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/cardbackground"
+        android:text="Start new game"
+        android:layout_marginBottom="10dp"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentLeft="true"/>
+
+    <TextView
+        android:id="@+id/inbox"
+        android:visibility="invisible"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:padding="10dp"
+        android:layout_gravity="center_horizontal"
+        android:background="@drawable/cardbackground"
+        android:text="Match history"
+        android:layout_alignParentTop="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"/>
+
+
+    <ImageView
+        android:layout_width="200dp"
+        android:layout_height="60dp"
+        android:layout_gravity="right"
+        android:src="@drawable/logo"
+        android:scaleType="fitEnd"
+        android:contentDescription="j4velin development"
+        android:layout_alignParentBottom="true"
+        android:layout_alignParentRight="true"
+        android:layout_alignParentEnd="true"/>
+
+    <TextView
+        android:id="@+id/yourturn"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Your turn:"
+        android:layout_below="@+id/start_game"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true"/>
+
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="fill_parent"
+        android:layout_below="@+id/yourturn"
+        android:layout_alignParentLeft="true"
+        android:layout_alignParentStart="true">
+
+        <ListView
+            android:id="@+id/active"
+            android:animateLayoutChanges="true"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:divider="@drawable/transparent"
+            android:dividerHeight="10dp"
+            android:layout_height="0dip"/>
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Their turn:"/>
+
+        <ListView
+            android:id="@+id/pending"
+            android:dividerHeight="10dp"
+            android:animateLayoutChanges="true"
+            android:divider="@drawable/transparent"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:layout_height="0dip"/>
+    </LinearLayout>
+
+
+</RelativeLayout>
