@@ -30,3 +30,9 @@ Some notes:
 Troubleshooting:
 -----
 This game uses the Google Play Game Services for matchfinding and other game related communication - make sure to have the latest Google Play Services installed and allow synchronization to be notified about match updates
+
+<table sytle="border: 0px;">
+<tr>
+<td><img width="200px" src="screenshot1.png" /></td>
+</tr>
+</table>
