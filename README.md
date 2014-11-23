@@ -34,5 +34,6 @@ This game uses the Google Play Game Services for matchfinding and other game rel
 <table sytle="border: 0px;">
 <tr>
 <td><img width="200px" src="screenshot1.png" /></td>
+<td><img width="200px" src="screenshot2.png" /></td>
 </tr>
 </table>
