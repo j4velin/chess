@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
           package="de.j4velin.chess"
           android:versionCode="102"
-          android:versionName="1.0">
+          android:versionName="1.0"
+          android:installLocation="auto">
 
     <uses-sdk
         android:minSdkVersion="11"
