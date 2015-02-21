@@ -18,6 +18,7 @@ package de.j4velin.chess;
 import android.app.AlertDialog;
 import android.app.Dialog;
 import android.app.Fragment;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
@@ -46,6 +47,7 @@ import com.google.android.gms.games.multiplayer.turnbased.TurnBasedMultiplayer;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import de.j4velin.chess.game.Game;
 import de.j4velin.chess.game.Match;
@@ -55,6 +57,7 @@ public class StartFragment extends Fragment {
 
     private static MatchesAdapter myTurns;
     private static MatchesAdapter pending;
+    private static LocalMatchesAdapter locals;
 
     static int LAST_SELECTED_MATCH_MODE;
 
@@ -75,13 +78,6 @@ public class StartFragment extends Fragment {
                 final Dialog d = new Dialog(getActivity());
                 d.requestWindowFeature(Window.FEATURE_NO_TITLE);
                 d.setContentView(R.layout.mode);
-                ((RadioGroup) d.findViewById(R.id.game_mode))
-                        .setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
-                            @Override
-                            public void onCheckedChanged(final RadioGroup radioGroup, int item) {
-
-                            }
-                        });
                 final RadioGroup mode = (RadioGroup) d.findViewById(R.id.game_mode);
                 final CheckBox local = (CheckBox) d.findViewById(R.id.local);
                 d.findViewById(R.id.ok).setOnClickListener(new View.OnClickListener() {
@@ -89,23 +85,28 @@ public class StartFragment extends Fragment {
                     public void onClick(final View v) {
                         LAST_SELECTED_MATCH_MODE = Integer.parseInt(
                                 (String) d.findViewById(mode.getCheckedRadioButtonId()).getTag());
-                        int other_player = LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_4_SIDES ||
-                                LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_2_SIDES ? 1 : 3;
                         if (local.isChecked()) {
                             Match match = new Match(String.valueOf(System.currentTimeMillis()),
-                                    LAST_SELECTED_MATCH_MODE, other_player + 1);
+                                    LAST_SELECTED_MATCH_MODE);
                             Game.newGame(match, null);
                             ((Main) getActivity()).startGame(match.id);
                         } else {
+                            int other_player =
+                                    LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_4_SIDES ||
+                                            LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_2_SIDES ?
+                                            1 : 3;
                             Intent intent = Games.TurnBasedMultiplayer
                                     .getSelectOpponentsIntent(((Main) getActivity()).getGC(),
                                             other_player, other_player, true);
                             getActivity().startActivityForResult(intent, Main.RC_SELECT_PLAYERS);
-                        } d.dismiss();
+                        }
+                        d.dismiss();
                     }
-                }); d.show();
+                });
+                d.show();
             }
-        }); v.findViewById(R.id.inbox).setOnClickListener(new View.OnClickListener() {
+        });
+        v.findViewById(R.id.inbox).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
                 Intent intent =
@@ -114,16 +115,16 @@ public class StartFragment extends Fragment {
             }
         });
         ListView active = (ListView) v.findViewById(R.id.active);
-        myTurns = new MatchesAdapter();
+        myTurns = new MatchesAdapter(v.findViewById(R.id.yourturn), active);
         active.setAdapter(myTurns);
         active.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(final AdapterView<?> parent, final View view, int position, long id) {
                 TurnBasedMatch m = (TurnBasedMatch) myTurns.getItem(position);
                 if (m.getData() == null) {
-                    Game.newGame(new Match(m, m.getVariant()), ((Main) getActivity()).getGC());
+                    Game.newGame(new Match(m), ((Main) getActivity()).getGC());
                 } else {
-                    if (!Game.load(m.getData(), m, ((Main) getActivity()).getGC())) {
+                    if (!Game.load(m.getData(), new Match(m), ((Main) getActivity()).getGC())) {
                         ((Main) getActivity()).updateApp();
                         return;
                     }
@@ -132,21 +133,37 @@ public class StartFragment extends Fragment {
             }
         });
         ListView pendingList = (ListView) v.findViewById(R.id.pending);
-        pending = new MatchesAdapter();
+        pending = new MatchesAdapter(v.findViewById(R.id.theirturn), pendingList);
         pendingList.setAdapter(pending);
         pendingList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(final AdapterView<?> parent, final View view, int position, long id) {
                 TurnBasedMatch m = (TurnBasedMatch) pending.getItem(position);
                 if (m.getData() == null) {
-                    Game.newGame(new Match(m, m.getVariant()), ((Main) getActivity()).getGC());
+                    Game.newGame(new Match(m), ((Main) getActivity()).getGC());
                 } else {
-                    if (!Game.load(m.getData(), m, ((Main) getActivity()).getGC())) {
+                    if (!Game.load(m.getData(), new Match(m), ((Main) getActivity()).getGC())) {
                         ((Main) getActivity()).updateApp();
                         return;
                     }
                 }
                 ((Main) getActivity()).startGame(m.getMatchId());
+            }
+        });
+        ListView localList = (ListView) v.findViewById(R.id.locals);
+        locals = new LocalMatchesAdapter(v.findViewById(R.id.local), localList);
+        localList.setAdapter(locals);
+        localList.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(final AdapterView<?> parent, final View view, int position, long id) {
+                Match m = (Match) locals.getItem(position);
+                if (!Game.load(getActivity()
+                        .getSharedPreferences("localMatches", Context.MODE_PRIVATE)
+                        .getString("match_" + m.id + "_" + m.mode, null).getBytes(), m, null)) {
+                    ((Main) getActivity()).updateApp();
+                    return;
+                }
+                ((Main) getActivity()).startGame(m.id);
             }
         });
         return v;
@@ -159,9 +176,10 @@ public class StartFragment extends Fragment {
         if (BuildConfig.DEBUG) Logger.log("StartFragment onResume, isConnected: " +
                 (((Main) getActivity()).getGC().isConnected()));
         if (((Main) getActivity()).getGC().isConnected()) loadMatches();
+        loadLocalMatches();
     }
 
-    public void loadMatches() {
+    void loadMatches() {
         if (BuildConfig.DEBUG) Logger.log("StartFramgnet.loadMatches");
         if (getView() == null) return; // not visible
         getView().findViewById(R.id.inbox).setVisibility(View.VISIBLE);
@@ -176,6 +194,22 @@ public class StartFragment extends Fragment {
                         result.release();
                     }
                 });
+    }
+
+    private void loadLocalMatches() {
+        if (BuildConfig.DEBUG) Logger.log("StartFramgnet.loadLocalMatches");
+        if (getView() == null) return; // not visible
+
+        Map<String, ?> localMatches =
+                getActivity().getSharedPreferences("localMatches", Context.MODE_PRIVATE).getAll();
+        ArrayList<Match> matches = new ArrayList<>(localMatches.size());
+        String[] data;
+        for (String m : localMatches.keySet()) {
+            data = m.split("_");
+            matches.add(new Match(data[1], Integer.parseInt(data[2])));
+        }
+
+        locals.setMatches(matches);
     }
 
     @Override
@@ -207,13 +241,111 @@ public class StartFragment extends Fragment {
         }
     }
 
+    private class LocalMatchesAdapter extends BaseAdapter {
+        private List<Match> matches;
+        private final LayoutInflater inflater;
+        private final View title, list;
+
+        private LocalMatchesAdapter(final View t, final View l) {
+            inflater = LayoutInflater.from(getActivity());
+            title = t;
+            list = l;
+        }
+
+        @Override
+        public int getCount() {
+            return matches == null ? 0 : matches.size();
+        }
+
+        @Override
+        public Object getItem(int position) {
+            return matches.get(position);
+        }
+
+        @Override
+        public long getItemId(int position) {
+            return Long.parseLong(matches.get(position).id);
+        }
+
+        @Override
+        public View getView(int position, View convertView, final ViewGroup viewGroup) {
+            final ViewHolder holder;
+
+            if (convertView == null) {
+                convertView = inflater.inflate(R.layout.match, null);
+                holder = new ViewHolder();
+                holder.team1 = (TextView) convertView.findViewById(R.id.team1);
+                holder.team2 = (TextView) convertView.findViewById(R.id.team2);
+                holder.time = (TextView) convertView.findViewById(R.id.time);
+                holder.delete = (ImageView) convertView.findViewById(R.id.delete);
+                holder.desc = (TextView) convertView.findViewById(R.id.desc);
+                convertView.setTag(holder);
+            } else {
+                holder = (ViewHolder) convertView.getTag();
+            }
+
+            final Match m = matches.get(position);
+
+            holder.desc.setText(Game.matchModeToName(getActivity(), m.mode));
+            if (m.getNumPlayers() <= 2) {
+                holder.team1.setText("Player 1");
+                holder.team2.setText("Player 2");
+            } else if (m.mode == Game.MODE_4_PLAYER_TEAMS) {
+                holder.team1.setText("Team 1: Player 1, Player 2");
+                holder.team2.setText("Team 2: Player 3, Player 4");
+            } else { // 4 player, no teams
+                holder.team1.setText("Player 1, Player 2");
+                holder.team2.setText("Player 3, Player 4");
+            }
+
+            holder.time.setText(DateUtils.getRelativeTimeSpanString(Long.parseLong(m.id)));
+            holder.delete.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(final View view) {
+                    new AlertDialog.Builder(getActivity())
+                            .setMessage("Do you really want to delete this match?")
+                            .setPositiveButton(android.R.string.yes,
+                                    new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(final DialogInterface dialogInterface, int i) {
+                                            getActivity().getSharedPreferences("localMatches",
+                                                    Context.MODE_PRIVATE).edit()
+                                                    .remove("match_" + m.id + "_" + m.mode)
+                                                    .commit();
+                                            loadLocalMatches();
+                                            dialogInterface.dismiss();
+                                        }
+                                    }).setNegativeButton(android.R.string.no,
+                            new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(final DialogInterface dialogInterface, int i) {
+                                    dialogInterface.dismiss();
+                                }
+                            }).create().show();
+                }
+            });
+
+            return convertView;
+        }
+
+        private void setMatches(final List<Match> m) {
+            matches = m;
+            notifyDataSetChanged();
+            title.setVisibility(matches.isEmpty() ? View.GONE : View.VISIBLE);
+            list.setVisibility(matches.isEmpty() ? View.GONE : View.VISIBLE);
+        }
+    }
+
     private class MatchesAdapter extends BaseAdapter {
 
         private List<TurnBasedMatch> matches;
         private final LayoutInflater inflater;
+        private final View title, list;
 
-        private MatchesAdapter() {
+        private MatchesAdapter(final View t, final View l) {
             inflater = LayoutInflater.from(getActivity());
+            title = t;
+            list = l;
         }
 
         @Override
@@ -339,6 +471,8 @@ public class StartFragment extends Fragment {
             }
             m.release();
             notifyDataSetChanged();
+            title.setVisibility(matches.isEmpty() ? View.GONE : View.VISIBLE);
+            list.setVisibility(matches.isEmpty() ? View.GONE : View.VISIBLE);
         }
     }
 

@@ -15,6 +15,7 @@ import java.util.List;
 
 import de.j4velin.chess.BuildConfig;
 import de.j4velin.chess.GameFragment;
+import de.j4velin.chess.R;
 import de.j4velin.chess.util.Logger;
 
 /*
@@ -55,6 +56,20 @@ public class Game {
 
     public static GameFragment UI;
 
+    public static String matchModeToName(final Context c, int mode) {
+        switch (mode) {
+            default:
+            case MODE_2_PLAYER_2_SIDES:
+                return c.getString(R.string.mode1);
+            case MODE_2_PLAYER_4_SIDES:
+                return c.getString(R.string.mode2);
+            case MODE_4_PLAYER_NO_TEAMS:
+                return c.getString(R.string.mode3);
+            case MODE_4_PLAYER_TEAMS:
+                return c.getString(R.string.mode4);
+        }
+    }
+
     /**
      * Should be called when a move is made
      */
@@ -76,8 +91,9 @@ public class Game {
 
     public static void save(final Context c) {
         if (match.isLocal) {
-            c.getSharedPreferences("Match_" + match.id, Context.MODE_PRIVATE).edit()
-                    .putString("state", new String(toBytes())).commit();
+            c.getSharedPreferences("localMatches", Context.MODE_PRIVATE).edit()
+                    .putString("match_" + match.id + "_" + match.mode, new String(toBytes()))
+                    .commit();
         }
     }
 
@@ -174,7 +190,7 @@ public class Game {
      * @param a    the ApiClient
      * @return false, if protocol version is too old and the app should be updated first
      */
-    public static boolean load(final byte[] data, final TurnBasedMatch m, final GoogleApiClient a) {
+    public static boolean load(final byte[] data, final Match m, final GoogleApiClient a) {
         if (BuildConfig.DEBUG) Logger.log("  load: " + (new String(data)));
         String[] s = new String(data).split(":");
         // newer protocol used for the match
@@ -182,7 +198,7 @@ public class Game {
             return false;
         }
         api = a;
-        match = new Match(m, 0);
+        match = m;
         if (s.length > 5 && s[5] != null) {
             match.mode = Integer.parseInt(s[5]);
         }

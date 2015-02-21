@@ -180,10 +180,10 @@ public class Main extends FragmentActivity implements GoogleApiClient.Connection
                                 }
                                 TurnBasedMatch match = result.getMatch();
                                 if (match.getData() == null) {
-                                    Game.newGame(new Match(match, match.getVariant()),
-                                            mGoogleApiClient);
+                                    Game.newGame(new Match(match), mGoogleApiClient);
                                 } else {
-                                    if (!Game.load(match.getData(), match, mGoogleApiClient)) {
+                                    if (!Game.load(match.getData(), new Match(match),
+                                            mGoogleApiClient)) {
                                         updateApp();
                                         return;
                                     }
@@ -217,7 +217,7 @@ public class Main extends FragmentActivity implements GoogleApiClient.Connection
         }
         if (gameFragment != null && gameFragment.isVisible() &&
                 match.getMatchId().equals(gameFragment.currentMatch)) {
-            if (Game.load(match.getData(), match, mGoogleApiClient)) {
+            if (Game.load(match.getData(), new Match(match), mGoogleApiClient)) {
                 gameFragment.update(match.getStatus() != TurnBasedMatch.MATCH_STATUS_ACTIVE &&
                         match.getStatus() != TurnBasedMatch.MATCH_STATUS_AUTO_MATCHING);
             } else {
@@ -259,7 +259,7 @@ public class Main extends FragmentActivity implements GoogleApiClient.Connection
         if (bundle != null &&
                 (match = bundle.getParcelable(Multiplayer.EXTRA_TURN_BASED_MATCH)) != null) {
             if (gameFragment == null || !gameFragment.isVisible()) {
-                if (Game.load(match.getData(), match, mGoogleApiClient)) {
+                if (Game.load(match.getData(), new Match(match), mGoogleApiClient)) {
                     startGame(match.getMatchId());
                 } else {
                     updateApp();

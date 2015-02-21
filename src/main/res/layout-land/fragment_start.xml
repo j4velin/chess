@@ -13,7 +13,7 @@
         android:padding="10dp"
         android:layout_gravity="center_horizontal"
         android:background="@drawable/cardbackground"
-        android:text="Start new game"
+        android:text="@string/newgame"
         android:layout_marginBottom="10dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"/>
@@ -26,7 +26,7 @@
         android:visibility="invisible"
         android:layout_gravity="center_horizontal"
         android:background="@drawable/cardbackground"
-        android:text="Match history"
+        android:text="@string/history"
         android:layout_alignParentTop="true"
         android:layout_alignRight="@+id/textlayout"
         android:layout_alignEnd="@+id/textlayout"/>
@@ -44,6 +44,7 @@
         android:layout_alignParentEnd="true"/>
 
     <LinearLayout
+        android:animateLayoutChanges="true"
         android:orientation="horizontal"
         android:id="@+id/textlayout"
         android:layout_width="fill_parent"
@@ -51,20 +52,32 @@
         android:layout_below="@id/start_game">
 
         <TextView
+            android:visibility="gone"
+            android:id="@+id/local"
+            android:layout_width="0dip"
+            android:layout_weight="1"
+            android:layout_height="wrap_content"
+            android:text="@string/localmatches"/>
+
+        <TextView
+            android:visibility="gone"
             android:id="@+id/yourturn"
             android:layout_width="0dip"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Your turn:"/>
+            android:text="@string/yourturn"/>
 
         <TextView
+            android:visibility="gone"
+            android:id="@+id/theirturn"
             android:layout_width="0dip"
             android:layout_weight="1"
             android:layout_height="wrap_content"
-            android:text="Their turn:"/>
+            android:text="@string/theirturn"/>
     </LinearLayout>
 
     <LinearLayout
+        android:animateLayoutChanges="true"
         android:orientation="horizontal"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
@@ -72,6 +85,18 @@
         android:baselineAligned="false">
 
         <ListView
+            android:visibility="gone"
+            android:id="@+id/locals"
+            android:animateLayoutChanges="true"
+            android:layout_width="0dip"
+            android:layout_weight="1"
+            android:divider="@drawable/transparent"
+            android:dividerHeight="10dp"
+            android:layout_height="match_parent"
+            android:paddingRight="5dp"/>
+
+        <ListView
+            android:visibility="gone"
             android:id="@+id/active"
             android:animateLayoutChanges="true"
             android:layout_width="0dip"
@@ -82,6 +107,7 @@
             android:paddingRight="5dp"/>
 
         <ListView
+            android:visibility="gone"
             android:id="@+id/pending"
             android:dividerHeight="10dp"
             android:animateLayoutChanges="true"

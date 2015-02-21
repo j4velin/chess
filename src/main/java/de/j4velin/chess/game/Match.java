@@ -29,18 +29,19 @@ public class Match {
     public int mode;
     public final String id;
 
-    public Match(final TurnBasedMatch match, int mode) {
+    public Match(final TurnBasedMatch match) {
         this.turnBasedMatch = match;
         this.isLocal = false;
-        this.mode = mode;
+        this.mode = match.getVariant();
         this.id = match.getMatchId();
     }
 
-    public Match(final String id, int mode, int numPlayers) {
+    public Match(final String id, int mode) {
         this.isLocal = true;
         this.mode = mode;
         this.id = id;
-        this.numPlayers = numPlayers;
+        this.numPlayers =
+                (mode == Game.MODE_2_PLAYER_2_SIDES || mode == Game.MODE_2_PLAYER_4_SIDES) ? 2 : 4;
     }
 
     public int getStatus() {

@@ -170,9 +170,9 @@ public class Board {
      */
     private static void setupPlayerTopBottom(int x_begin, int y_pawns, int y_others, final String owner) {
         for (int x = x_begin; x < x_begin + 8; x++) {
-            BOARD[x][y_pawns] = Game.match.isLocal && y_pawns == 1 ?
-                    new Pawn(new Coordinate(x, y_pawns), owner) :
-                    new DownPawn(new Coordinate(x, y_pawns), owner);
+            BOARD[x][y_pawns] = Game.match.isLocal && (y_pawns == 6 || y_pawns == 10) ?
+                    new DownPawn(new Coordinate(x, y_pawns), owner) :
+                    new Pawn(new Coordinate(x, y_pawns), owner);
         }
         BOARD[x_begin][y_others] = new Rook(new Coordinate(x_begin, y_others), owner);
         BOARD[x_begin + 1][y_others] = new Knight(new Coordinate(x_begin + 1, y_others), owner);
