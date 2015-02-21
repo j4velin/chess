@@ -1,19 +1,3 @@
-package de.j4velin.chess;
-
-import android.app.Fragment;
-import android.os.Bundle;
-import android.text.Html;
-import android.view.LayoutInflater;
-import android.view.MenuItem;
-import android.view.View;
-import android.view.ViewGroup;
-import android.widget.TextView;
-
-import de.j4velin.chess.game.Game;
-import de.j4velin.chess.game.Player;
-import de.j4velin.chess.util.Achievements;
-import de.j4velin.chess.util.Logger;
-
 /*
  * Copyright 2014 Thomas Hoffmann
  *
@@ -29,6 +13,23 @@ import de.j4velin.chess.util.Logger;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package de.j4velin.chess;
+
+import android.app.Fragment;
+import android.content.Context;
+import android.os.Bundle;
+import android.text.Html;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.TextView;
+
+import de.j4velin.chess.game.Game;
+import de.j4velin.chess.game.Player;
+import de.j4velin.chess.util.Achievements;
+import de.j4velin.chess.util.Logger;
+
 public class GameFragment extends Fragment {
 
     private TextView turn;
@@ -64,7 +65,7 @@ public class GameFragment extends Fragment {
     @Override
     public void onPause() {
         super.onPause();
-        Game.save(getActivity());
+        if (!Game.isGameOver()) Game.save(getActivity());
     }
 
     @Override
@@ -72,6 +73,11 @@ public class GameFragment extends Fragment {
         return ((Main) getActivity()).optionsItemSelected(item);
     }
 
+    /**
+     * Updates the board
+     *
+     * @param gameOver true if the game is already over
+     */
     public void update(boolean gameOver) {
         if (BuildConfig.DEBUG)
             Logger.log(" UI:update() " + gameOver + " board=null?" + (board == null));
@@ -80,15 +86,40 @@ public class GameFragment extends Fragment {
         if (!gameOver) updateTurn();
     }
 
+    /**
+     * Called when the game is over
+     *
+     * @param win true if this player won
+     */
     public void gameOver(boolean win) {
-        if (turn == null) return;
-        turn.setText("Game Over!\n" +
-                (win ? "Congratulation, you've won the match!" : "Sorry, you've lost the match!"));
+        if (turn == null || getActivity() == null) return;
+        turn.setText(getString(R.string.gameover) + "\n" +
+                (win ? getString(R.string.win) : getString(R.string.loss)));
         if (win && getActivity() != null) {
             Achievements.checkAchievements(((Main) getActivity()).getGC(), getActivity());
         }
     }
 
+    /**
+     * Called when a local match is over.
+     * Also deletes the data for this local match
+     *
+     * @param winnerPlayer the player who won the match
+     */
+    public void gameOverLocal(final Player winnerPlayer) {
+        if (turn == null || getActivity() == null) return;
+        turn.setText(getString(R.string.gameover) + "\n" + getString(R.string.winlocal,
+                Game.match.mode == Game.MODE_4_PLAYER_TEAMS ? "Team " + winnerPlayer.team :
+                        winnerPlayer.name));
+        getActivity().getSharedPreferences("localMatches", Context.MODE_PRIVATE).edit()
+                .remove("match_" + Game.match.id + "_" + Game.match.mode).commit();
+        if (BuildConfig.DEBUG)
+            Logger.log("Deleting match_" + Game.match.id + "_" + Game.match.mode);
+    }
+
+    /**
+     * Update the 'current turn' information view
+     */
     public void updateTurn() {
         if (BuildConfig.DEBUG) Logger.log(" UI:updateTurn() turn=null?" + (turn == null));
         if (turn == null) return;

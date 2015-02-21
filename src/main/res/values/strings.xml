@@ -14,4 +14,10 @@
     <string name="history">Match history</string>
     <string name="newgame">Start new game</string>
     <string name="localgame">Local game</string>
+    <string name="gameover">Game Over!\n</string>
+    <string name="win">Congratulation, you\'ve won the match!</string>
+    <string name="loss">Sorry, you\'ve lost the match!</string>
+    <string name="winlocal">Congratulation %s, you\'ve won the match!</string>
+    <string name="deletematch">Do you really want to delete this match?</string>
+    <string name="leavematch">Do you really want to leave this match?</string>
 </resources>

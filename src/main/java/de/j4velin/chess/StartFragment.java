@@ -45,7 +45,11 @@ import com.google.android.gms.games.multiplayer.turnbased.TurnBasedMatch;
 import com.google.android.gms.games.multiplayer.turnbased.TurnBasedMatchBuffer;
 import com.google.android.gms.games.multiplayer.turnbased.TurnBasedMultiplayer;
 
+import java.text.DateFormat;
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
@@ -54,6 +58,8 @@ import de.j4velin.chess.game.Match;
 import de.j4velin.chess.util.Logger;
 
 public class StartFragment extends Fragment {
+
+    private final static DateFormat dateformat = DateFormat.getDateTimeInstance();
 
     private static MatchesAdapter myTurns;
     private static MatchesAdapter pending;
@@ -205,9 +211,17 @@ public class StartFragment extends Fragment {
         ArrayList<Match> matches = new ArrayList<>(localMatches.size());
         String[] data;
         for (String m : localMatches.keySet()) {
+            if (BuildConfig.DEBUG) Logger.log("local match found: " + m);
             data = m.split("_");
             matches.add(new Match(data[1], Integer.parseInt(data[2])));
         }
+
+        Collections.sort(matches, new Comparator<Match>() {
+            @Override
+            public int compare(Match m1, Match m2) {
+                return (int) (Long.parseLong(m2.id) - Long.parseLong(m1.id));
+            }
+        });
 
         locals.setMatches(matches);
     }
@@ -287,23 +301,14 @@ public class StartFragment extends Fragment {
             final Match m = matches.get(position);
 
             holder.desc.setText(Game.matchModeToName(getActivity(), m.mode));
-            if (m.getNumPlayers() <= 2) {
-                holder.team1.setText("Player 1");
-                holder.team2.setText("Player 2");
-            } else if (m.mode == Game.MODE_4_PLAYER_TEAMS) {
-                holder.team1.setText("Team 1: Player 1, Player 2");
-                holder.team2.setText("Team 2: Player 3, Player 4");
-            } else { // 4 player, no teams
-                holder.team1.setText("Player 1, Player 2");
-                holder.team2.setText("Player 3, Player 4");
-            }
+            holder.team1.setVisibility(View.GONE);
+            holder.team2.setVisibility(View.GONE);
 
-            holder.time.setText(DateUtils.getRelativeTimeSpanString(Long.parseLong(m.id)));
+            holder.time.setText(dateformat.format(new Date(Long.parseLong(m.id))));
             holder.delete.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(final View view) {
-                    new AlertDialog.Builder(getActivity())
-                            .setMessage("Do you really want to delete this match?")
+                    new AlertDialog.Builder(getActivity()).setMessage(R.string.deletematch)
                             .setPositiveButton(android.R.string.yes,
                                     new DialogInterface.OnClickListener() {
                                         @Override
@@ -410,8 +415,7 @@ public class StartFragment extends Fragment {
             holder.delete.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(final View view) {
-                    new AlertDialog.Builder(getActivity())
-                            .setMessage("Do you really want to leave this match?")
+                    new AlertDialog.Builder(getActivity()).setMessage(R.string.leavematch)
                             .setPositiveButton(android.R.string.yes,
                                     new DialogInterface.OnClickListener() {
                                         @Override

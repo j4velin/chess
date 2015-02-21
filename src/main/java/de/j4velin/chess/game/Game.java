@@ -63,9 +63,9 @@ public class Game {
                 return c.getString(R.string.mode1);
             case MODE_2_PLAYER_4_SIDES:
                 return c.getString(R.string.mode2);
-            case MODE_4_PLAYER_NO_TEAMS:
-                return c.getString(R.string.mode3);
             case MODE_4_PLAYER_TEAMS:
+                return c.getString(R.string.mode3);
+            case MODE_4_PLAYER_NO_TEAMS:
                 return c.getString(R.string.mode4);
         }
     }
@@ -103,12 +103,21 @@ public class Game {
      * @return the team-id of the winner team
      */
     public static int getWinnerTeam() {
+        return getWinner().team;
+    }
+
+    /**
+     * Gets the player you has won the game
+     *
+     * @return the winner
+     */
+    private static Player getWinner() {
         for (Player p : players) {
             if (!deadPlayers.contains(p.id)) {
-                return p.team;
+                return p;
             }
         }
-        return -1;
+        return null;
     }
 
     /**
@@ -132,8 +141,10 @@ public class Game {
             } else {
                 Games.TurnBasedMultiplayer.finishMatch(api, match.id);
             }
+            if (UI != null) UI.gameOver(winnerTeam == getPlayer(myPlayerId).team);
+        } else {
+            if (UI != null) UI.gameOverLocal(getWinner());
         }
-        if (UI != null) UI.gameOver(winnerTeam == getPlayer(myPlayerId).team);
     }
 
     /**
@@ -298,8 +309,9 @@ public class Game {
         players = new Player[num_players];
         if (match.isLocal) {
             for (int i = 0; i < num_players; i++) {
-                // TODO TEAMS
-                players[i] = new Player(String.valueOf(i), i, PLAYER_COLOR[i], "Player " + i);
+                players[i] =
+                        new Player(String.valueOf(i), match.mode == MODE_4_PLAYER_TEAMS ? i / 2 : i,
+                                PLAYER_COLOR[i], "Player " + (i + 1));
             }
         } else {
             players[0] = new Player(match.getParticipants().get(0).getParticipantId(), 1,
