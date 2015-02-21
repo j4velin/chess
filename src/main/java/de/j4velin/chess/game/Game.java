@@ -1,5 +1,6 @@
 package de.j4velin.chess.game;
 
+import android.content.Context;
 import android.graphics.Color;
 import android.util.Pair;
 
@@ -44,11 +45,9 @@ public class Game {
     public final static int MODE_4_PLAYER_TEAMS = 3;
     public final static int MODE_4_PLAYER_NO_TEAMS = 4;
 
-    public static int match_mode;
-
     public static String myPlayerId;
     private static GoogleApiClient api;
-    private static TurnBasedMatch match;
+    public static Match match;
     public static Player[] players;
     public static int turns;
 
@@ -69,8 +68,17 @@ public class Game {
         }
         if (BuildConfig.DEBUG) Logger.log("Game.moved, next player " + next);
         if (next.startsWith("AutoMatch_")) next = null;
-        Games.TurnBasedMultiplayer.takeTurn(api, match.getMatchId(), toBytes(), next);
+        if (!match.isLocal) {
+            Games.TurnBasedMultiplayer.takeTurn(api, match.id, toBytes(), next);
+        }
         if (UI != null) UI.updateTurn();
+    }
+
+    public static void save(final Context c) {
+        if (match.isLocal) {
+            c.getSharedPreferences("Match_" + match.id, Context.MODE_PRIVATE).edit()
+                    .putString("state", new String(toBytes())).commit();
+        }
     }
 
     /**
@@ -91,21 +99,23 @@ public class Game {
      * Game over
      */
     public static void over() {
-        if (BuildConfig.DEBUG) Logger.log("Game.over state: " + match.getStatus());
         int winnerTeam = getWinnerTeam();
-        if (match.getStatus() == TurnBasedMatch.MATCH_STATUS_ACTIVE) {
-            List<ParticipantResult> result = new ArrayList<ParticipantResult>(players.length);
-            for (Player p : players) {
-                result.add(new ParticipantResult(p.id,
-                        p.team == winnerTeam ? ParticipantResult.MATCH_RESULT_WIN :
-                                ParticipantResult.MATCH_RESULT_LOSS,
-                        ParticipantResult.PLACING_UNINITIALIZED));
-                if (BuildConfig.DEBUG)
-                    Logger.log(p.id + " " + (p.team == winnerTeam ? "win" : "loss"));
+        if (!match.isLocal) {
+            if (BuildConfig.DEBUG) Logger.log("Game.over state: " + match.getStatus());
+            if (match.getStatus() == TurnBasedMatch.MATCH_STATUS_ACTIVE) {
+                List<ParticipantResult> result = new ArrayList<ParticipantResult>(players.length);
+                for (Player p : players) {
+                    result.add(new ParticipantResult(p.id,
+                            p.team == winnerTeam ? ParticipantResult.MATCH_RESULT_WIN :
+                                    ParticipantResult.MATCH_RESULT_LOSS,
+                            ParticipantResult.PLACING_UNINITIALIZED));
+                    if (BuildConfig.DEBUG)
+                        Logger.log(p.id + " " + (p.team == winnerTeam ? "win" : "loss"));
+                }
+                Games.TurnBasedMultiplayer.finishMatch(api, match.id, toBytes(), result);
+            } else {
+                Games.TurnBasedMultiplayer.finishMatch(api, match.id);
             }
-            Games.TurnBasedMultiplayer.finishMatch(api, match.getMatchId(), toBytes(), result);
-        } else {
-            Games.TurnBasedMultiplayer.finishMatch(api, match.getMatchId());
         }
         if (UI != null) UI.gameOver(winnerTeam == getPlayer(myPlayerId).team);
     }
@@ -143,7 +153,16 @@ public class Game {
      * @return true, if it's this client's turn
      */
     public static boolean myTurn() {
-        return myPlayerId.equals(players[turns % players.length].id);
+        return match.isLocal || myPlayerId.equals(players[turns % players.length].id);
+    }
+
+    /**
+     * Gets the id for the currently active player.
+     *
+     * @return the id of the currently active player
+     */
+    public static String currentPlayer() {
+        return players[turns % players.length].id;
     }
 
 
@@ -163,7 +182,10 @@ public class Game {
             return false;
         }
         api = a;
-        match = m;
+        match = new Match(m, 0);
+        if (s.length > 5 && s[5] != null) {
+            match.mode = Integer.parseInt(s[5]);
+        }
         turns = Integer.parseInt(s[0]);
         deadPlayers = new LinkedList<String>();
         if (s.length > 3 && s[3] != null) {
@@ -171,9 +193,6 @@ public class Game {
                 if (BuildConfig.DEBUG) Logger.log("  dead: " + dead);
                 if (dead != null && dead.length() > 0) deadPlayers.add(dead);
             }
-        }
-        if (s.length > 5 && s[5] != null) {
-            match_mode = Integer.parseInt(s[5]);
         }
         createPlayers();
         if (BuildConfig.DEBUG)
@@ -189,7 +208,7 @@ public class Game {
                 s[2] = s[2].replace("AutoMatch_4", players[3].id);
             }
         }
-        Board.load(s[2], match_mode);
+        Board.load(s[2], match.mode);
         if (s.length > 4 && s[4] != null) {
             String[] lastMoves = s[4].split(";");
             String[] coords;
@@ -234,7 +253,7 @@ public class Game {
             }
             sb.append(";");
         }
-        sb.append(":").append(match_mode).append(":").append(PROTOCOL_VERSION);
+        sb.append(":").append(match.mode).append(":").append(PROTOCOL_VERSION);
         if (BuildConfig.DEBUG) Logger.log("  save: " + sb.toString());
         return sb.toString().getBytes();
     }
@@ -243,55 +262,62 @@ public class Game {
      * Initiate a new game
      *
      * @param m the match
-     * @param a the ApiClient
+     * @param a the ApiClient, can be null for a local game
      */
-    public static void newGame(final TurnBasedMatch m, final GoogleApiClient a) {
+    public static void newGame(final Match m, final GoogleApiClient a) {
         api = a;
         match = m;
         turns = 0;
-        match_mode = m.getVariant();
         deadPlayers = new LinkedList<String>();
         createPlayers();
         if (BuildConfig.DEBUG) Logger.log("Game.newGame, players: " + players.length);
-        Board.newGame(players, match_mode);
+        Board.newGame(players);
     }
 
     /**
      * Creates the player objects
      */
     private static void createPlayers() {
-        int num_players = match.getParticipants().size() + match.getAvailableAutoMatchSlots();
+        int num_players = match.getNumPlayers();
         players = new Player[num_players];
-        players[0] =
-                new Player(match.getParticipants().get(0).getParticipantId(), 1, PLAYER_COLOR[0],
-                        match.getParticipants().get(0).getDisplayName());
-        if (match.getParticipants().size() > 1) {
-            players[1] = new Player(match.getParticipants().get(1).getParticipantId(),
-                    match_mode == MODE_4_PLAYER_TEAMS ? 1 : 2, PLAYER_COLOR[1],
-                    match.getParticipants().get(1).getDisplayName());
+        if (match.isLocal) {
+            for (int i = 0; i < num_players; i++) {
+                // TODO TEAMS
+                players[i] = new Player(String.valueOf(i), i, PLAYER_COLOR[i], "Player " + i);
+            }
         } else {
-            players[1] = new Player("AutoMatch_2", match_mode == MODE_4_PLAYER_TEAMS ? 1 : 2,
-                    PLAYER_COLOR[1], "Waiting for player...");
-        }
-        if (num_players > 2) {
-            if (match.getParticipants().size() > 2) {
-                players[2] = new Player(match.getParticipants().get(2).getParticipantId(),
-                        match_mode == MODE_4_PLAYER_TEAMS ? 2 : 3, PLAYER_COLOR[2],
-                        match.getParticipants().get(2).getDisplayName());
+            players[0] = new Player(match.getParticipants().get(0).getParticipantId(), 1,
+                    PLAYER_COLOR[0], match.getParticipants().get(0).getDisplayName());
+            if (match.getParticipants().size() > 1) {
+                players[1] = new Player(match.getParticipants().get(1).getParticipantId(),
+                        match.mode == MODE_4_PLAYER_TEAMS ? 1 : 2, PLAYER_COLOR[1],
+                        match.getParticipants().get(1).getDisplayName());
             } else {
-                players[2] = new Player("AutoMatch_3", match_mode == MODE_4_PLAYER_TEAMS ? 2 : 3,
-                        PLAYER_COLOR[2], "Waiting for player...");
+                players[1] = new Player("AutoMatch_2", match.mode == MODE_4_PLAYER_TEAMS ? 1 : 2,
+                        PLAYER_COLOR[1], "Waiting for player...");
             }
-            if (match.getParticipants().size() > 3) {
-                players[3] = new Player(match.getParticipants().get(3).getParticipantId(),
-                        match_mode == MODE_4_PLAYER_TEAMS ? 2 : 4, PLAYER_COLOR[3],
-                        match.getParticipants().get(3).getDisplayName());
-            } else {
-                players[3] = new Player("AutoMatch_4", match_mode == MODE_4_PLAYER_TEAMS ? 2 : 4,
-                        PLAYER_COLOR[3], "Waiting for player...");
+            if (num_players > 2) {
+                if (match.getParticipants().size() > 2) {
+                    players[2] = new Player(match.getParticipants().get(2).getParticipantId(),
+                            match.mode == MODE_4_PLAYER_TEAMS ? 2 : 3, PLAYER_COLOR[2],
+                            match.getParticipants().get(2).getDisplayName());
+                } else {
+                    players[2] =
+                            new Player("AutoMatch_3", match.mode == MODE_4_PLAYER_TEAMS ? 2 : 3,
+                                    PLAYER_COLOR[2], "Waiting for player...");
+                }
+                if (match.getParticipants().size() > 3) {
+                    players[3] = new Player(match.getParticipants().get(3).getParticipantId(),
+                            match.mode == MODE_4_PLAYER_TEAMS ? 2 : 4, PLAYER_COLOR[3],
+                            match.getParticipants().get(3).getDisplayName());
+                } else {
+                    players[3] =
+                            new Player("AutoMatch_4", match.mode == MODE_4_PLAYER_TEAMS ? 2 : 4,
+                                    PLAYER_COLOR[3], "Waiting for player...");
+                }
             }
+            myPlayerId = match.getParticipantId(Games.Players.getCurrentPlayerId(api));
         }
-        myPlayerId = match.getParticipantId(Games.Players.getCurrentPlayerId(api));
         if (BuildConfig.DEBUG) Logger.log("Game.createPlayers, " + players[0].id + ", " +
                 players[1].id +
                 ((players.length > 2) ? ", " + players[2].id + ", " + players[3].id : ""));

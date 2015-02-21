@@ -51,7 +51,7 @@ public class BoardView extends View {
             if (BuildConfig.DEBUG) Logger.log("selection: " + x + " " + y);
             Coordinate c = new Coordinate(x, y);
             if (c.isValid() && Board.getPiece(c) != null &&
-                    Board.getPiece(c).getPlayerId().equals(Game.myPlayerId) && Game.myTurn()) {
+                    Board.getPiece(c).getPlayerId().equals(Game.currentPlayer())) {
                 selection = c;
                 invalidate();
             } else {

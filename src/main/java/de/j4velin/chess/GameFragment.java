@@ -62,6 +62,12 @@ public class GameFragment extends Fragment {
     }
 
     @Override
+    public void onPause() {
+        super.onPause();
+        Game.save(getActivity());
+    }
+
+    @Override
     public boolean onOptionsItemSelected(final MenuItem item) {
         return ((Main) getActivity()).optionsItemSelected(item);
     }
@@ -99,7 +105,7 @@ public class GameFragment extends Fragment {
                         .append(String.format("#%06X", (0xFFFFFF & Game.getPlayerColor(p.id))))
                         .append("'>");
                 if (p.id.equals(current)) sb.append("-> ");
-                if (Game.match_mode == Game.MODE_4_PLAYER_TEAMS) {
+                if (Game.match.mode == Game.MODE_4_PLAYER_TEAMS) {
                     sb.append(p.name).append(" [").append(p.team).append("]</font><br />");
                 } else {
                     sb.append(p.name).append("</font><br />");

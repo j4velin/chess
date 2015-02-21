@@ -45,6 +45,7 @@ import com.google.android.gms.games.multiplayer.turnbased.TurnBasedMultiplayer;
 import java.util.ArrayList;
 
 import de.j4velin.chess.game.Game;
+import de.j4velin.chess.game.Match;
 import de.j4velin.chess.util.Logger;
 
 public class Main extends FragmentActivity implements GoogleApiClient.ConnectionCallbacks,
@@ -135,65 +136,68 @@ public class Main extends FragmentActivity implements GoogleApiClient.Connection
     public void onActivityResult(int request, int response, final Intent data) {
         super.onActivityResult(request, response, data);
         if (BuildConfig.DEBUG) Logger.log("Main onActivityResult");
-        if (response != Activity.RESULT_OK) {
-            // user canceled
-            return;
-        }
-        if (request == RC_SELECT_PLAYERS) {
-            // get the invitee list
-            final ArrayList<String> invitees = data.getStringArrayListExtra(Games.EXTRA_PLAYER_IDS);
+        if (response == GamesActivityResultCodes.RESULT_RECONNECT_REQUIRED &&
+                !mGoogleApiClient.isConnected() && !mGoogleApiClient.isConnecting()) {
+            mGoogleApiClient.connect();
+        } else if (response == Activity.RESULT_CANCELED) {
+            // User cancelled.
+            mGoogleApiClient.disconnect();
+        } else if (response == Activity.RESULT_OK) {
+            if (request == RC_SELECT_PLAYERS) {
+                // get the invitee list
+                final ArrayList<String> invitees =
+                        data.getStringArrayListExtra(Games.EXTRA_PLAYER_IDS);
 
-            // get auto-match criteria
-            Bundle autoMatchCriteria;
-            int minAutoMatchPlayers = data.getIntExtra(Multiplayer.EXTRA_MIN_AUTOMATCH_PLAYERS, 0);
-            int maxAutoMatchPlayers = data.getIntExtra(Multiplayer.EXTRA_MAX_AUTOMATCH_PLAYERS, 0);
-            if (minAutoMatchPlayers > 0) {
-                autoMatchCriteria = RoomConfig
-                        .createAutoMatchCriteria(minAutoMatchPlayers, maxAutoMatchPlayers, 0);
-            } else {
-                autoMatchCriteria = null;
-            }
+                // get auto-match criteria
+                Bundle autoMatchCriteria;
+                int minAutoMatchPlayers =
+                        data.getIntExtra(Multiplayer.EXTRA_MIN_AUTOMATCH_PLAYERS, 0);
+                int maxAutoMatchPlayers =
+                        data.getIntExtra(Multiplayer.EXTRA_MAX_AUTOMATCH_PLAYERS, 0);
+                if (minAutoMatchPlayers > 0) {
+                    autoMatchCriteria = RoomConfig
+                            .createAutoMatchCriteria(minAutoMatchPlayers, maxAutoMatchPlayers, 0);
+                } else {
+                    autoMatchCriteria = null;
+                }
 
-            TurnBasedMatchConfig tbmc = TurnBasedMatchConfig.builder().addInvitedPlayers(invitees)
-                    .setAutoMatchCriteria(autoMatchCriteria)
-                    .setVariant(StartFragment.LAST_SELECTED_MATCH_MODE).build();
+                TurnBasedMatchConfig tbmc =
+                        TurnBasedMatchConfig.builder().addInvitedPlayers(invitees)
+                                .setAutoMatchCriteria(autoMatchCriteria)
+                                .setVariant(StartFragment.LAST_SELECTED_MATCH_MODE).build();
 
-            // kick the match off
-            Games.TurnBasedMultiplayer.createMatch(mGoogleApiClient, tbmc).setResultCallback(
-                    new ResultCallback<TurnBasedMultiplayer.InitiateMatchResult>() {
-                        @Override
-                        public void onResult(final TurnBasedMultiplayer.InitiateMatchResult result) {
-                            if (BuildConfig.DEBUG)
-                                Logger.log("InitiateMatchResult onResult " + result.getStatus());
-                            // Check if the status code is not success;
-                            if (result.getStatus().getStatusCode() != GamesStatusCodes.STATUS_OK) {
-                                return;
-                            }
-                            TurnBasedMatch match = result.getMatch();
-                            if (match.getData() == null) {
-                                Game.newGame(match, mGoogleApiClient);
-                            } else {
-                                if (!Game.load(match.getData(), match, mGoogleApiClient)) {
-                                    updateApp();
+                // kick the match off
+                Games.TurnBasedMultiplayer.createMatch(mGoogleApiClient, tbmc).setResultCallback(
+                        new ResultCallback<TurnBasedMultiplayer.InitiateMatchResult>() {
+                            @Override
+                            public void onResult(final TurnBasedMultiplayer.InitiateMatchResult result) {
+                                if (BuildConfig.DEBUG) Logger.log(
+                                        "InitiateMatchResult onResult " + result.getStatus());
+                                // Check if the status code is not success;
+                                if (result.getStatus().getStatusCode() !=
+                                        GamesStatusCodes.STATUS_OK) {
                                     return;
                                 }
+                                TurnBasedMatch match = result.getMatch();
+                                if (match.getData() == null) {
+                                    Game.newGame(new Match(match, match.getVariant()),
+                                            mGoogleApiClient);
+                                } else {
+                                    if (!Game.load(match.getData(), match, mGoogleApiClient)) {
+                                        updateApp();
+                                        return;
+                                    }
+                                }
+                                startGame(match.getMatchId());
                             }
-                            startGame(match.getMatchId());
-                        }
-                    });
-        } else if (request == RC_RESOLVE) {
-            // We're coming back from an activity that was launched to resolve a
-            // connection problem. For example, the sign-in UI.
-            if (response == Activity.RESULT_OK && !mGoogleApiClient.isConnected() &&
-                    !mGoogleApiClient.isConnecting()) {
-                // Ready to try to connect again.
-                mGoogleApiClient.connect();
-            } else if (response == GamesActivityResultCodes.RESULT_RECONNECT_REQUIRED &&
-                    !mGoogleApiClient.isConnected() && !mGoogleApiClient.isConnecting()) {
-                mGoogleApiClient.connect();
-            } else if (response == Activity.RESULT_CANCELED) {
-                // User cancelled.
-                mGoogleApiClient.disconnect();
+                        });
+            } else if (request == RC_RESOLVE) {
+                // We're coming back from an activity that was launched to resolve a
+                // connection problem. For example, the sign-in UI.
+                if (!mGoogleApiClient.isConnected() && !mGoogleApiClient.isConnecting()) {
+                    // Ready to try to connect again.
+                    mGoogleApiClient.connect();
+                }
             }
         }
     }

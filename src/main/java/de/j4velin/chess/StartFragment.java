@@ -31,6 +31,7 @@ import android.view.ViewGroup;
 import android.view.Window;
 import android.widget.AdapterView;
 import android.widget.BaseAdapter;
+import android.widget.CheckBox;
 import android.widget.ImageView;
 import android.widget.ListView;
 import android.widget.RadioGroup;
@@ -47,6 +48,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import de.j4velin.chess.game.Game;
+import de.j4velin.chess.game.Match;
 import de.j4velin.chess.util.Logger;
 
 public class StartFragment extends Fragment {
@@ -77,24 +79,33 @@ public class StartFragment extends Fragment {
                         .setOnCheckedChangeListener(new RadioGroup.OnCheckedChangeListener() {
                             @Override
                             public void onCheckedChanged(final RadioGroup radioGroup, int item) {
-                                LAST_SELECTED_MATCH_MODE =
-                                        Integer.parseInt((String) d.findViewById(item).getTag());
-                                int other_player =
-                                        LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_4_SIDES ||
-                                                LAST_SELECTED_MATCH_MODE ==
-                                                        Game.MODE_2_PLAYER_2_SIDES ? 1 : 3;
-                                Intent intent = Games.TurnBasedMultiplayer
-                                        .getSelectOpponentsIntent(((Main) getActivity()).getGC(),
-                                                other_player, other_player, true);
-                                getActivity()
-                                        .startActivityForResult(intent, Main.RC_SELECT_PLAYERS);
-                                d.dismiss();
+
                             }
                         });
-                d.show();
+                final RadioGroup mode = (RadioGroup) d.findViewById(R.id.game_mode);
+                final CheckBox local = (CheckBox) d.findViewById(R.id.local);
+                d.findViewById(R.id.ok).setOnClickListener(new View.OnClickListener() {
+                    @Override
+                    public void onClick(final View v) {
+                        LAST_SELECTED_MATCH_MODE = Integer.parseInt(
+                                (String) d.findViewById(mode.getCheckedRadioButtonId()).getTag());
+                        int other_player = LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_4_SIDES ||
+                                LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_2_SIDES ? 1 : 3;
+                        if (local.isChecked()) {
+                            Match match = new Match(String.valueOf(System.currentTimeMillis()),
+                                    LAST_SELECTED_MATCH_MODE, other_player + 1);
+                            Game.newGame(match, null);
+                            ((Main) getActivity()).startGame(match.id);
+                        } else {
+                            Intent intent = Games.TurnBasedMultiplayer
+                                    .getSelectOpponentsIntent(((Main) getActivity()).getGC(),
+                                            other_player, other_player, true);
+                            getActivity().startActivityForResult(intent, Main.RC_SELECT_PLAYERS);
+                        } d.dismiss();
+                    }
+                }); d.show();
             }
-        });
-        v.findViewById(R.id.inbox).setOnClickListener(new View.OnClickListener() {
+        }); v.findViewById(R.id.inbox).setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(final View view) {
                 Intent intent =
@@ -110,7 +121,7 @@ public class StartFragment extends Fragment {
             public void onItemClick(final AdapterView<?> parent, final View view, int position, long id) {
                 TurnBasedMatch m = (TurnBasedMatch) myTurns.getItem(position);
                 if (m.getData() == null) {
-                    Game.newGame(m, ((Main) getActivity()).getGC());
+                    Game.newGame(new Match(m, m.getVariant()), ((Main) getActivity()).getGC());
                 } else {
                     if (!Game.load(m.getData(), m, ((Main) getActivity()).getGC())) {
                         ((Main) getActivity()).updateApp();
@@ -128,7 +139,7 @@ public class StartFragment extends Fragment {
             public void onItemClick(final AdapterView<?> parent, final View view, int position, long id) {
                 TurnBasedMatch m = (TurnBasedMatch) pending.getItem(position);
                 if (m.getData() == null) {
-                    Game.newGame(m, ((Main) getActivity()).getGC());
+                    Game.newGame(new Match(m, m.getVariant()), ((Main) getActivity()).getGC());
                 } else {
                     if (!Game.load(m.getData(), m, ((Main) getActivity()).getGC())) {
                         ((Main) getActivity()).updateApp();
@@ -153,7 +164,6 @@ public class StartFragment extends Fragment {
     public void loadMatches() {
         if (BuildConfig.DEBUG) Logger.log("StartFramgnet.loadMatches");
         if (getView() == null) return; // not visible
-        getView().findViewById(R.id.start_game).setVisibility(View.VISIBLE);
         getView().findViewById(R.id.inbox).setVisibility(View.VISIBLE);
         Games.TurnBasedMultiplayer.loadMatchesByStatus(((Main) getActivity()).getGC(),
                 new int[]{TurnBasedMatch.MATCH_TURN_STATUS_MY_TURN,
