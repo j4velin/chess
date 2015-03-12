@@ -86,6 +86,7 @@ public class StartFragment extends Fragment {
                 d.setContentView(R.layout.mode);
                 final RadioGroup mode = (RadioGroup) d.findViewById(R.id.game_mode);
                 final CheckBox local = (CheckBox) d.findViewById(R.id.local);
+                mode.check(mode.getChildAt(0).getId());
                 d.findViewById(R.id.ok).setOnClickListener(new View.OnClickListener() {
                     @Override
                     public void onClick(final View v) {
