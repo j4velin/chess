@@ -47,6 +47,10 @@ public class GameFragment extends Fragment {
 
     @Override
     public View onCreateView(final LayoutInflater inflater, final ViewGroup container, final Bundle savedInstanceState) {
+        if (Game.match == null) {
+            ((Main) getActivity()).showStartFragment();
+            return null;
+        }
         // Inflate the layout for this fragment
         View v = inflater.inflate(R.layout.fragment_game, container, false);
         turn = (TextView) v.findViewById(R.id.turn);

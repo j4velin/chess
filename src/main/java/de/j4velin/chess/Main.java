@@ -69,9 +69,7 @@ public class Main extends FragmentActivity implements GoogleApiClient.Connection
         if (savedInstanceState == null) {
             // Create new fragment and transaction
             if (BuildConfig.DEBUG) Logger.log("Main.onCreate create new startFramgnet");
-            startFragment = new StartFragment();
-            getFragmentManager().beginTransaction().replace(android.R.id.content, startFragment,
-                    startFragment.getClass().getSimpleName()).commit();
+            showStartFragment();
         }
 
         GoogleApiClient.Builder builder = new GoogleApiClient.Builder(this, this, this);
@@ -79,6 +77,12 @@ public class Main extends FragmentActivity implements GoogleApiClient.Connection
         builder.addScope(Games.SCOPE_GAMES);
 
         mGoogleApiClient = builder.build();
+    }
+
+    public void showStartFragment() {
+        startFragment = new StartFragment();
+        getFragmentManager().beginTransaction().replace(android.R.id.content, startFragment,
+                startFragment.getClass().getSimpleName()).commit();
     }
 
     @Override
