@@ -1,3 +1,12 @@
+buildscript {
+    repositories {
+        jcenter()
+    }
+    dependencies {
+        classpath 'com.android.tools.build:gradle:+'
+    }
+}
+
 apply plugin: 'com.android.application'
 
 android {
@@ -29,8 +38,12 @@ android {
     }
 }
 
+repositories {
+    jcenter()
+}
+
 dependencies {
-    compile 'com.google.android.gms:play-services:6.1.+'
+    compile 'com.google.android.gms:play-services:+'
 }
 
 def props = new Properties()

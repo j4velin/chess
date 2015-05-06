@@ -11,10 +11,9 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:padding="10dp"
-        android:visibility="invisible"
         android:layout_gravity="center_horizontal"
         android:background="@drawable/cardbackground"
-        android:text="Start new game"
+        android:text="@string/newgame"
         android:layout_marginBottom="10dp"
         android:layout_alignParentTop="true"
         android:layout_alignParentLeft="true"/>
@@ -27,7 +26,7 @@
         android:padding="10dp"
         android:layout_gravity="center_horizontal"
         android:background="@drawable/cardbackground"
-        android:text="Match history"
+        android:text="@string/history"
         android:layout_alignParentTop="true"
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"/>
@@ -44,25 +43,41 @@
         android:layout_alignParentRight="true"
         android:layout_alignParentEnd="true"/>
 
-    <TextView
-        android:id="@+id/yourturn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="Your turn:"
-        android:layout_below="@+id/start_game"
-        android:layout_alignParentLeft="true"
-        android:layout_alignParentStart="true"/>
-
-
     <LinearLayout
+        android:animateLayoutChanges="true"
         android:orientation="vertical"
         android:layout_width="fill_parent"
         android:layout_height="fill_parent"
-        android:layout_below="@+id/yourturn"
+        android:layout_below="@+id/start_game"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true">
 
+        <TextView
+            android:visibility="gone"
+            android:id="@+id/local"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/localmatches"/>
+
         <ListView
+            android:visibility="gone"
+            android:id="@+id/locals"
+            android:animateLayoutChanges="true"
+            android:layout_width="match_parent"
+            android:layout_weight="1"
+            android:divider="@drawable/transparent"
+            android:dividerHeight="10dp"
+            android:layout_height="0dip"/>
+
+        <TextView
+            android:visibility="gone"
+            android:id="@+id/yourturn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/yourturn"/>
+
+        <ListView
+            android:visibility="gone"
             android:id="@+id/active"
             android:animateLayoutChanges="true"
             android:layout_width="match_parent"
@@ -72,11 +87,14 @@
             android:layout_height="0dip"/>
 
         <TextView
+            android:visibility="gone"
+            android:id="@+id/theirturn"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="Their turn:"/>
+            android:text="@string/theirturn"/>
 
         <ListView
+            android:visibility="gone"
             android:id="@+id/pending"
             android:dividerHeight="10dp"
             android:animateLayoutChanges="true"
