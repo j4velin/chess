@@ -98,14 +98,31 @@ public class StartFragment extends Fragment {
                             Game.newGame(match, null);
                             ((Main) getActivity()).startGame(match.id);
                         } else {
-                            int other_player =
-                                    LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_4_SIDES ||
-                                            LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_2_SIDES ?
-                                            1 : 3;
-                            Intent intent = Games.TurnBasedMultiplayer
-                                    .getSelectOpponentsIntent(((Main) getActivity()).getGC(),
-                                            other_player, other_player, true);
-                            getActivity().startActivityForResult(intent, Main.RC_SELECT_PLAYERS);
+                            if (!((Main) getActivity()).getGC().isConnected()) {
+                                AlertDialog.Builder builder =
+                                        new AlertDialog.Builder(getActivity());
+                                builder.setTitle("Not connected to Google Play");
+                                builder.setMessage(
+                                        "You need to connect to Google Play Services to be able to find opponent players and start an online game")
+                                        .setPositiveButton(android.R.string.ok,
+                                                new DialogInterface.OnClickListener() {
+                                                    public void onClick(DialogInterface dialog, int id) {
+                                                        dialog.dismiss();
+                                                        ((Main) getActivity()).getGC().connect();
+                                                    }
+                                                });
+                                builder.create().show();
+                            } else {
+                                int other_player =
+                                        LAST_SELECTED_MATCH_MODE == Game.MODE_2_PLAYER_4_SIDES ||
+                                                LAST_SELECTED_MATCH_MODE ==
+                                                        Game.MODE_2_PLAYER_2_SIDES ? 1 : 3;
+                                Intent intent = Games.TurnBasedMultiplayer
+                                        .getSelectOpponentsIntent(((Main) getActivity()).getGC(),
+                                                other_player, other_player, true);
+                                getActivity()
+                                        .startActivityForResult(intent, Main.RC_SELECT_PLAYERS);
+                            }
                         }
                         d.dismiss();
                     }
