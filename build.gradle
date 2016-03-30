@@ -55,7 +55,7 @@ repositories {
 }
 
 dependencies {
-    compile 'com.google.android.gms:play-services-games:+'
+    compile 'com.google.android.gms:play-services-games:8.4.0'
 }
 
 def props = new Properties()
